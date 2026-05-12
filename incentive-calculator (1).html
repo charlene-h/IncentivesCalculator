@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Research Incentive Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=TikTok+Sans:opsz,wght@14..72,300;14..72,400;14..72,500;14..72,600;14..72,700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #F7F7F8;
+    --surface:  #FFFFFF;
+    --surface2: #F2F2F4;
+    --surface3: #EAEAEC;
+    --border:   #E3E3E6;
+    --border-2: #CDCDD1;
+    --red:      #FE2C55;
+    --red-dim:  #e01e45;
+    --red-soft: rgba(254,44,85,0.07);
+    --cyan:     #25F4EE;
+    --cyan-dim: #1ad5d0;
+    --cyan-soft:rgba(37,244,238,0.12);
+    --text:     #121212;
+    --text-2:   #545458;
+    --text-3:   #9E9EA8;
+    --green:    #18A058;
+    --green-soft:rgba(24,160,88,0.08);
+    --amber:    #E6820E;
+    --amber-soft:rgba(230,130,14,0.08);
+    --r:        8px;
+    --font:     'TikTok Sans', system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    background:var(--bg); color:var(--text); font-family:var(--font);
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    padding:32px 16px;
+  }
+
+  /* CARD */
+  .card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:16px; width:100%; max-width:900px;
+    overflow:hidden; box-shadow:0 2px 16px rgba(0,0,0,0.06);
+  }
+
+  /* HEADER */
+  .card-header {
+    padding:14px 24px 13px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .card-title { font-size:16px; font-weight:700; letter-spacing:0.01em; color:var(--text); }
+  .card-sub   { font-size:13px; color:var(--text-3); font-weight:400; }
+
+  /* TWO-COLUMN BODY */
+  .card-body { display:grid; grid-template-columns:260px 1fr; }
+
+  /* ── LEFT: RESULT ── */
+  .result-col {
+    border-right:1px solid var(--border);
+    display:flex; flex-direction:column;
+  }
+  .result-block {
+    flex:1; padding:36px 24px 28px; text-align:center;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background: linear-gradient(160deg, var(--red-soft) 0%, var(--cyan-soft) 100%);
+  }
+  .result-eyebrow {
+    font-size:11px; font-weight:600; letter-spacing:0.16em;
+    text-transform:uppercase; color:var(--text-3); margin-bottom:10px;
+  }
+  .result-num {
+    font-size:64px; font-weight:700; color:var(--red);
+    letter-spacing:-0.02em; line-height:1;
+    transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  .result-usd {
+    font-size:13px; color:var(--text-3); font-weight:400;
+    margin-top:7px; min-height:18px;
+  }
+  .fairness {
+    display:inline-flex; align-items:center; gap:5px; margin-top:14px;
+    padding:4px 11px; border-radius:100px;
+    font-size:11px; font-weight:600; letter-spacing:0.08em;
+    text-transform:uppercase; transition:all 0.2s;
+  }
+  .fairness.ok   { background:var(--green-soft); color:var(--green); border:1px solid rgba(24,160,88,0.2); }
+  .fairness.low  { background:var(--red-soft);   color:var(--red);   border:1px solid rgba(254,44,85,0.2); }
+  .fairness.high { background:var(--amber-soft);  color:var(--amber); border:1px solid rgba(230,130,14,0.2); }
+  .fairness-dot  { width:5px; height:5px; border-radius:50%; background:currentColor; flex-shrink:0; }
+
+  /* TOTAL BLOCK */
+  .total-block {
+    padding:16px 24px; border-top:1px solid var(--border);
+    background:var(--surface2);
+  }
+  .total-row-inner { display:flex; align-items:baseline; justify-content:space-between; }
+  .total-label { font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-3); }
+  .total-val   { font-size:26px; font-weight:700; color:var(--text); }
+  .total-usd   { font-size:11px; color:var(--text-3); margin-top:2px; }
+
+  /* ── RIGHT: FORM ── */
+  .form-col { padding:22px 26px; display:flex; flex-direction:column; gap:16px; }
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .field { display:flex; flex-direction:column; gap:7px; }
+  .field.full { grid-column:1/-1; }
+  label { font-size:11px; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-3); }
+
+  input[type="number"], select {
+    background:var(--surface2); border:1px solid var(--border); border-radius:var(--r);
+    color:var(--text); font-family:var(--font); font-size:15px; font-weight:500;
+    padding:9px 12px; width:100%; outline:none; transition:border-color 0.15s;
+    -webkit-appearance:none; appearance:none;
+  }
+  input[type="number"]:focus, select:focus { border-color:var(--red); }
+  select {
+    background-image:url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%239E9EA8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 11px center; padding-right:28px; cursor:pointer;
+  }
+
+  /* SEGMENTED */
+  .seg { display:flex; border:1px solid var(--border); border-radius:var(--r); overflow:hidden; }
+  .seg-btn {
+    flex:1; padding:10px 4px; background:var(--surface2); border:none;
+    border-right:1px solid var(--border); color:var(--text-3);
+    font-family:var(--font); font-size:12px; font-weight:600;
+    cursor:pointer; transition:all 0.12s; text-align:center; letter-spacing:0.01em;
+  }
+  .seg-btn:last-child { border-right:none; }
+  .seg-btn.active { background:var(--red); color:#fff; border-color:var(--red); }
+  .seg-btn:hover:not(.active) { background:var(--surface3); color:var(--text-2); }
+
+  /* SLIDER */
+  input[type="range"] {
+    flex:1; -webkit-appearance:none; height:3px;
+    background:var(--border); border-radius:2px; outline:none; cursor:pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance:none; width:14px; height:14px; border-radius:50%;
+    background:var(--red); border:2px solid #fff;
+    box-shadow:0 0 0 1px var(--border-2); cursor:pointer;
+  }
+  .slider-row { display:flex; align-items:center; gap:10px; }
+  .slider-val  { font-size:14px; font-weight:700; color:var(--red); min-width:16px; text-align:center; }
+  .slider-hints { display:flex; justify-content:space-between; margin-top:3px; }
+  .slider-hints span { font-size:11px; color:var(--text-3); font-weight:500; }
+
+  /* GUIDANCE */
+  .guidance-block {
+    padding:14px 16px; border-radius:var(--r); display:none;
+    background:var(--cyan-soft); border:1px solid rgba(37,244,238,0.3);
+  }
+  .guidance-block.visible { display:block; }
+  .guidance-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:5px; }
+  .guidance-title  { font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-2); }
+  .guidance-rec    {
+    font-size:11px; font-weight:700; color:var(--red);
+    background:#fff; border:1px solid rgba(254,44,85,0.2);
+    padding:2px 9px; border-radius:100px; white-space:nowrap;
+  }
+  .guidance-text { font-size:12px; color:var(--text-2); line-height:1.6; font-weight:400; }
+
+  /* DIVIDER */
+  .divider { border:none; border-top:1px solid var(--border); }
+
+  /* FOOTER */
+  .footer-note {
+    grid-column:1/-1; padding:14px 26px;
+    font-size:11px; color:var(--text-3); font-weight:400;
+    line-height:1.6; border-top:1px solid var(--border);
+    background:var(--surface2);
+  }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- HEADER -->
+  <div class="card-header">
+    <span class="card-title">Incentive Calculator</span>
+    <span class="card-sub">UX Research Ops</span>
+  </div>
+
+  <div class="card-body">
+
+    <!-- LEFT: RESULT -->
+    <div class="result-col">
+      <div class="result-block">
+        <div class="result-eyebrow">Per Participant</div>
+        <div class="result-num" id="resultNum">—</div>
+        <div class="result-usd" id="resultUSD"></div>
+        <div class="fairness ok" id="fairness">
+          <span class="fairness-dot"></span>
+          <span id="fairnessText">Standard Rate</span>
+        </div>
+      </div>
+      <div class="total-block">
+        <div class="total-row-inner">
+          <span class="total-label">Study Total Cost</span>
+          <span class="total-val" id="totalVal">—</span>
+        </div>
+        <div class="total-usd" id="totalUSD"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: FORM -->
+    <div class="form-col">
+      <div class="form-grid">
+
+        <div class="field">
+          <label>Study Format</label>
+          <select id="studyType" onchange="onStudyChange()">
+            <option value="interview">In-depth Interview</option>
+            <option value="usability">Usability Test</option>
+            <option value="concept">Concept Testing</option>
+            <option value="uat">UAT</option>
+            <option value="payment">Local Payment Recording</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Duration (min)</label>
+          <input type="number" id="duration" value="60" min="5" max="480" oninput="calc()"/>
+        </div>
+
+        <div class="field">
+          <label>No. of Participants</label>
+          <input type="number" id="participants" value="5" min="1" max="500" oninput="calc()"/>
+        </div>
+
+        <div class="field">
+          <label>Country</label>
+          <select id="country" onchange="calc()"></select>
+        </div>
+
+        <div class="field full">
+          <label>Session Type</label>
+          <div class="seg">
+            <button class="seg-btn active" id="fmt_remote"   onclick="setFmt('remote')">Remote</button>
+            <button class="seg-btn"        id="fmt_inperson" onclick="setFmt('inperson')">In-Person</button>
+            <button class="seg-btn"        id="fmt_special"  onclick="setFmt('special')">Special Case</button>
+          </div>
+        </div>
+
+        <div class="field full">
+          <label>Task Complexity</label>
+          <div class="slider-row">
+            <input type="range" id="complexity" min="1" max="5" value="2" oninput="syncSlider();calc()"/>
+            <span class="slider-val" id="complexity_val">2</span>
+          </div>
+          <div class="slider-hints"><span>Simple</span><span>Moderate</span><span>Expert</span></div>
+        </div>
+
+        <div class="field full">
+          <label>Recruitment Difficulty</label>
+          <div class="seg">
+            <button class="seg-btn active" id="recr_general"  onclick="setRecr('general')">General</button>
+            <button class="seg-btn"        id="recr_targeted" onclick="setRecr('targeted')">Targeted</button>
+            <button class="seg-btn"        id="recr_niche"    onclick="setRecr('niche')">Niche</button>
+            <button class="seg-btn"        id="recr_rare"     onclick="setRecr('rare')">Rare</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Guidance -->
+      <div class="guidance-block" id="guidanceBlock">
+        <div class="guidance-header">
+          <span class="guidance-title">Recommended Sample Size</span>
+          <span class="guidance-rec" id="guidanceRec"></span>
+        </div>
+        <div class="guidance-text" id="guidanceText"></div>
+      </div>
+
+    </div><!-- /form-col -->
+
+    <div class="footer-note">
+      Rates reflect internal panel benchmarks (Remote / In-Person / Special Case). Special case covers refund/return flows, eKYC, cash loan users, and similar niche scenarios — rate can increase by 10% with recruitment difficulty. Figures are per hour, prorated by session duration.
+    </div>
+
+  </div><!-- /card-body -->
+</div>
+
+<script>
+const COUNTRIES = {
+  sg: { label:'🇸🇬 Singapore',    sym:'S$',  remote:50,     inPerson:60,     special:60,     cur:'SGD', usd:0.74,     gift:'Grab'   },
+  th: { label:'🇹🇭 Thailand',     sym:'฿',   remote:1000,   inPerson:1200,   special:1200,   cur:'THB', usd:0.028,    gift:'Grab'   },
+  my: { label:'🇲🇾 Malaysia',     sym:'RM',  remote:150,    inPerson:180,    special:180,    cur:'MYR', usd:0.22,     gift:'Grab'   },
+  ph: { label:'🇵🇭 Philippines',  sym:'₱',   remote:1000,   inPerson:1200,   special:1200,   cur:'PHP', usd:0.017,    gift:'Grab'   },
+  id: { label:'🇮🇩 Indonesia',    sym:'Rp',  remote:450000, inPerson:500000, special:500000, cur:'IDR', usd:0.000062, gift:'Grab'   },
+  vn: { label:'🇻🇳 Vietnam',      sym:'₫',   remote:500000, inPerson:550000, special:550000, cur:'VND', usd:0.000039, gift:'Grab'   },
+  gb: { label:'🇬🇧 UK',           sym:'£',   remote:60,     inPerson:70,     special:70,     cur:'GBP', usd:1.27,     gift:'GoGift' },
+  us: { label:'🇺🇸 US',           sym:'$',   remote:50,     inPerson:55,     special:55,     cur:'USD', usd:1.00,     gift:'GoGift' },
+  mx: { label:'🇲🇽 Mexico',       sym:'MX$', remote:800,    inPerson:1000,   special:1000,   cur:'MXN', usd:0.050,    gift:'GoGift' },
+  br: { label:'🇧🇷 Brazil',       sym:'R$',  remote:200,    inPerson:220,    special:220,    cur:'BRL', usd:0.18,     gift:'GoGift' },
+  jp: { label:'🇯🇵 Japan',        sym:'¥',   remote:5000,   inPerson:5500,   special:5500,   cur:'JPY', usd:0.0065,   gift:'GoGift' },
+  kr: { label:'🇰🇷 Korea',        sym:'₩',   remote:50000,  inPerson:55000,  special:55000,  cur:'KRW', usd:0.00072,  gift:'GoGift' },
+  sa: { label:'🇸🇦 Saudi Arabia', sym:'SAR', remote:150,    inPerson:200,    special:200,    cur:'SAR', usd:0.27,     gift:'GoGift' },
+  ae: { label:'🇦🇪 Dubai',        sym:'AED', remote:150,    inPerson:160,    special:160,    cur:'AED', usd:0.27,     gift:'GoGift' },
+  de: { label:'🇩🇪 Germany',      sym:'€',   remote:50,     inPerson:55,     special:55,     cur:'EUR', usd:1.08,     gift:'GoGift' },
+  fr: { label:'🇫🇷 France',       sym:'€',   remote:50,     inPerson:55,     special:55,     cur:'EUR', usd:1.08,     gift:'GoGift' },
+  ie: { label:'🇮🇪 Ireland',      sym:'€',   remote:50,     inPerson:55,     special:55,     cur:'EUR', usd:1.08,     gift:'GoGift' },
+  it: { label:'🇮🇹 Italy',        sym:'€',   remote:45,     inPerson:50,     special:50,     cur:'EUR', usd:1.08,     gift:'GoGift' },
+  es: { label:'🇪🇸 Spain',        sym:'€',   remote:45,     inPerson:50,     special:50,     cur:'EUR', usd:1.08,     gift:'GoGift' },
+  pl: { label:'🇵🇱 Poland',       sym:'€',   remote:40,     inPerson:45,     special:45,     cur:'EUR', usd:1.08,     gift:'GoGift' },
+  nl: { label:'🇳🇱 Netherlands',  sym:'€',   remote:50,     inPerson:55,     special:55,     cur:'EUR', usd:1.08,     gift:'GoGift' },
+  be: { label:'🇧🇪 Belgium',      sym:'€',   remote:50,     inPerson:55,     special:55,     cur:'EUR', usd:1.08,     gift:'GoGift' },
+  se: { label:'🇸🇪 Sweden',       sym:'kr',  remote:400,    inPerson:450,    special:450,    cur:'SEK', usd:0.093,    gift:'GoGift' },
+  cz: { label:'🇨🇿 Czech',        sym:'€',   remote:35,     inPerson:40,     special:40,     cur:'EUR', usd:1.08,     gift:'GoGift' },
+  at: { label:'🇦🇹 Austria',      sym:'€',   remote:50,     inPerson:55,     special:55,     cur:'EUR', usd:1.08,     gift:'GoGift' },
+};
+
+const STUDY_GUIDANCE = {
+  interview: {
+    rec: '3 – 5 per segment',
+    text: 'General guide is 3–5 per segment. For 3 segments with overlapping criteria, expect 12–15 total. Tighter criteria = fewer needed.',
+  },
+  usability: {
+    rec: '3 – 5 per round',
+    text: 'General guide is 3–5 per round. Iterative rounds are more effective than one large batch — test, fix, re-test.',
+  },
+  concept: {
+    rec: 'Qual: 5–8 · Quant: 50+',
+    text: 'Qualitative (discussion-based): 5–8 is sufficient for directional themes.\nQuantitative (survey-based): 50+ for meaningful results; 100+ if segmenting by user type.',
+  },
+  uat: {
+    rec: '15 – 20',
+    text: 'Broader coverage needed for real-world edge cases and device/environment variance. 15 minimum; 20 for higher pre-release confidence.',
+  },
+  payment: {
+    rec: '1 – 3 per payment method',
+    text: 'Recruit multi-payment method users to cover several flows per session. Guide is 1–3 users per payment method in the market.',
+  },
+};
+
+const COMPLEXITY_M = { 1:1.00, 2:1.10, 3:1.25, 4:1.50, 5:2.00 };
+const RECR_M       = { general:1.00, targeted:1.15, niche:1.40, rare:2.00 };
+const BIG          = ['IDR','VND','KRW','JPY','THB','PHP','MXN','BRL','SAR','AED','SEK'];
+
+let state = { fmt:'remote', recr:'general' };
+
+window.addEventListener('DOMContentLoaded', () => {
+  const sel = document.getElementById('country');
+  Object.entries(COUNTRIES).forEach(([k,v]) => {
+    const o = document.createElement('option');
+    o.value = k; o.textContent = v.label;
+    if (k === 'sg') o.selected = true;
+    sel.appendChild(o);
+  });
+  onStudyChange();
+});
+
+function onStudyChange() {
+  const g = STUDY_GUIDANCE[document.getElementById('studyType').value];
+  const block = document.getElementById('guidanceBlock');
+  if (g) {
+    document.getElementById('guidanceRec').textContent  = g.rec;
+    document.getElementById('guidanceText').textContent = g.text;
+    block.classList.add('visible');
+  } else {
+    block.classList.remove('visible');
+  }
+  calc();
+}
+function setFmt(v) {
+  state.fmt = v;
+  ['remote','inperson','special'].forEach(x => document.getElementById('fmt_'+x).classList.toggle('active', x===v));
+  calc();
+}
+function setRecr(v) {
+  state.recr = v;
+  ['general','targeted','niche','rare'].forEach(x => document.getElementById('recr_'+x).classList.toggle('active', x===v));
+  calc();
+}
+function syncSlider() {
+  document.getElementById('complexity_val').textContent = document.getElementById('complexity').value;
+}
+function fmtNum(n, c) {
+  if (BIG.includes(c.cur)) { const r=Math.round(n); return r>=1000 ? c.sym+(r/1000).toFixed(0)+'K' : c.sym+r; }
+  return c.sym + Math.round(n);
+}
+function calc() {
+  const dur  = parseFloat(document.getElementById('duration').value)  || 60;
+  const pax  = parseInt(document.getElementById('participants').value) || 1;
+  const cx   = parseInt(document.getElementById('complexity').value);
+  const ck   = document.getElementById('country').value;
+  const c    = COUNTRIES[ck];
+  const base = state.fmt === 'inperson' ? c.inPerson : state.fmt === 'special' ? c.special : c.remote;
+  const perP = (dur/60) * base * COMPLEXITY_M[cx] * RECR_M[state.recr];
+  const total = perP * pax;
+
+  document.getElementById('resultNum').textContent = fmtNum(perP, c);
+  const uEl = document.getElementById('resultUSD');
+  uEl.textContent = c.cur === 'USD' ? '' : '≈ $' + Math.round(perP * c.usd) + ' USD per participant';
+
+  document.getElementById('totalVal').textContent = fmtNum(total, c);
+  const tUSD = document.getElementById('totalUSD');
+  tUSD.textContent = c.cur === 'USD' ? '' : '≈ $' + Math.round(total * c.usd) + ' USD';
+
+  const rawBase = (dur/60) * base;
+  let f='ok', m='Standard Rate';
+  if (perP < rawBase * 0.9) { f='low';  m='Below standard rate'; }
+  if (perP > rawBase * 2.5) { f='high'; m='Above standard — confirm with ops'; }
+  document.getElementById('fairness').className = 'fairness ' + f;
+  document.getElementById('fairnessText').textContent = m;
+}
+</script>
+</body>
+</html>
